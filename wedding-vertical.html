@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>婚礼邀请函</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Caveat:wght@500;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  /* ===== Base ===== */
+  *, *::before, *::after {
+    margin: 0; padding: 0; box-sizing: border-box;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Noto Serif SC', 'ZCOOL XiaoWei', serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    touch-action: none;
+  }
+
+  /* ===== 纵向滑动容器 ===== */
+  .swipe-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+  }
+  .swipe-container.dragging { transition: none; }
+
+  .page {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* =================================================
+     第 1 页 — 封面（按 Canva 截图还原）
+     ================================================= */
+  .page-cover {
+    background: #000;
+    color: #fff;
+  }
+
+  /* 全屏背景图 */
+  .cover-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 0;
+  }
+
+  /* 覆盖层（左上日期、新郎新娘、花体 Welcome） */
+  .cover-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* --- 左上 日期 --- */
+  .cover-date {
+    position: absolute;
+    top: 4.5%;
+    left: 5.5%;
+    color: #111;
+    line-height: 1;
+    font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  }
+  .cover-date .d-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .cover-date .num {
+    font-size: 3rem;
+    font-weight: 500;
+    letter-spacing: -1px;
+  }
+  .cover-date .unit {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  .cover-date .slash {
+    font-size: 3rem;
+    font-weight: 300;
+    opacity: 0.85;
+    margin: 0 2px;
+  }
+  .cover-date .d-row + .d-row {
+    margin-top: -10px; /* 两行数字之间收紧 */
+  }
+  .cover-date .city {
+    margin-top: 10px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.95rem;
+    letter-spacing: 4px;
+    text-align: center;
+    color: #1a1a1a;
+  }
+
+  /* --- 新郎 / 新娘 标签 --- */
+  .name-tag {
+    position: absolute;
+    color: #fff;
+    font-family: 'Noto Serif SC', serif;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  }
+  .name-tag .cn-label {
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .name-tag .en-label {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    margin-top: 2px;
+    opacity: 0.9;
+  }
+  .name-tag .sep {
+    display: inline-block;
+    margin: 0 8px;
+    font-weight: 300;
+    transform: translateY(-2px);
+  }
+  .name-tag .cn-name {
+    display: inline-block;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    vertical-align: middle;
+  }
+
+  /* 新郎（上半部分右侧） */
+  .name-groom {
+    top: 36%;
+    right: 6%;
+    text-align: left;
+  }
+  /* 新娘（下半部分左侧） */
+  .name-bride {
+    bottom: 18%;
+    left: 6%;
+    text-align: left;
+  }
+
+  /* --- 中部花体 Welcome to our wedding --- */
+  .cover-welcome {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    text-align: center;
+    color: #f2c94c;               /* 金黄色 */
+    font-family: 'Great Vibes', 'Caveat', cursive;
+    font-size: 3.2rem;
+    line-height: 1.05;
+    letter-spacing: 1px;
+    text-shadow:
+      0 1px 4px rgba(0,0,0,0.25),
+      0 0 1px rgba(0,0,0,0.2);
+    transform-origin: center;
+  }
+  .cover-welcome .line1 { display: block; transform: translateX(-6%); }
+  .cover-welcome .line2 { display: block; transform: translateX(8%); }
+  /* 花体下方点缀下划线（轻微弧线感） */
+  .cover-welcome::after {
+    content: "";
+    display: block;
+    width: 72%;
+    height: 2px;
+    margin: 4px auto 0;
+    background: #f2c94c;
+    border-radius: 2px;
+    opacity: 0.9;
+  }
+
+  /* ===== 通用占位页 ===== */
+  .page-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #fdf6ec 0%, #f5ebda 100%);
+    color: #5a4a3a;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .page-placeholder .zh {
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 2.2rem;
+    letter-spacing: 4px;
+    margin-bottom: 18px;
+    color: #7a8c5e;
+  }
+  .page-placeholder .en {
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.5rem;
+    color: #c89b7b;
+  }
+
+  /* ===== 向上滑动提示 ===== */
+  .scroll-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-align: center;
+    pointer-events: none;
+    animation: hintFade 2.2s ease-in-out infinite;
+    z-index: 10;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .scroll-hint .arrow {
+    display: block;
+    margin: 6px auto 0;
+    width: 10px;
+    height: 10px;
+    border-right: 1.5px solid #fff;
+    border-bottom: 1.5px solid #fff;
+    transform: rotate(45deg);
+  }
+  @keyframes hintFade {
+    0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+    50%      { opacity: 1;   transform: translateX(-50%) translateY(-6px); }
+  }
+  .scroll-hint.hide { opacity: 0; transition: opacity 0.4s ease; }
+
+  /* ===== 右侧页码指示点 ===== */
+  .nav-dots {
+    position: fixed;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 999;
+    padding: 10px 6px;
+    background: rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 12px;
+  }
+  .nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    transition: all 0.3s ease;
+  }
+  .nav-dot.active {
+    height: 18px;
+    border-radius: 3px;
+    background: #fff;
+  }
+
+  /* ===== 小屏适配（iPhone SE 等） ===== */
+  @media (max-height: 680px) {
+    .cover-date .num,
+    .cover-date .slash { font-size: 2.4rem; }
+    .cover-welcome { font-size: 2.6rem; }
+    .name-tag .cn-name { font-size: 1.15rem; }
+  }
+  @media (min-width: 520px) {
+    /* 桌面预览时限制画面比例为手机竖屏 */
+    .page-cover .cover-bg { object-position: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="swipe-container" id="swipeContainer">
+
+  <!-- ============ 第 1 页：封面（按 Canva 模板还原） ============ -->
+  <section class="page page-cover" data-page="0">
+    <img class="cover-bg" src="page1/IMG_3627.jpeg" alt="婚礼邀请函封面">
+
+    <div class="cover-layer">
+
+      <!-- 左上 日期 -->
+      <div class="cover-date">
+        <div class="d-row">
+          <span class="num">9</span>
+          <span class="unit">月</span>
+          <span class="slash">/</span>
+        </div>
+        <div class="d-row">
+          <span class="num">26</span>
+          <span class="unit">日</span>
+        </div>
+        <div class="city">深&nbsp;&nbsp;圳</div>
+      </div>
+
+      <!-- 新郎 -->
+      <div class="name-tag name-groom">
+        <div>
+          <span class="cn-label">
+            新郎
+            <span class="en-label">Bride</span>
+          </span>
+          <span class="sep">/</span>
+          <span class="cn-name">李治鹏</span>
+        </div>
+      </div>
+
+      <!-- 新娘 -->
+      <div class="name-tag name-bride">
+        <div>
+          <span class="cn-label">
+            新娘
+            <span class="en-label">Groom</span>
+          </span>
+          <span class="sep">/</span>
+          <span class="cn-name">徐&nbsp;玥</span>
+        </div>
+      </div>
+
+      <!-- 中部花体 Welcome to our wedding -->
+      <div class="cover-welcome">
+        <span class="line1">Welcome to</span>
+        <span class="line2">our wedding</span>
+      </div>
+
+    </div>
+
+    <div class="scroll-hint" id="scrollHint">
+      向上滑动
+      <span class="arrow"></span>
+    </div>
+  </section>
+
+  <!-- ============ 第 2 页：占位，后续替换 ============ -->
+  <section class="page page-placeholder" data-page="1">
+    <div class="zh">敬 请 期 待</div>
+    <div class="en">Page 2 — coming soon</div>
+  </section>
+
+</div>
+
+<div class="nav-dots" id="navDots"></div>
+
+<script>
+(function () {
+  var container = document.getElementById('swipeContainer');
+  var pages = container.querySelectorAll('.page');
+  var total = pages.length;
+  var current = 0;
+
+  var navDots = document.getElementById('navDots');
+  for (var i = 0; i < total; i++) {
+    var d = document.createElement('div');
+    d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    navDots.appendChild(d);
+  }
+  var dotEls = navDots.querySelectorAll('.nav-dot');
+
+  function goTo(index) {
+    if (index < 0) index = 0;
+    if (index > total - 1) index = total - 1;
+    current = index;
+    container.style.transform = 'translateY(' + (-current * 100) + '%)';
+    dotEls.forEach(function (d, i) {
+      d.classList.toggle('active', i === current);
+    });
+    var hint = document.getElementById('scrollHint');
+    if (hint) hint.classList.toggle('hide', current !== 0);
+  }
+
+  var startY = 0, startX = 0, deltaY = 0;
+  var dragging = false, locked = false, direction = null;
+  var threshold = 60;
+
+  function onStart(e) {
+    var t = e.touches ? e.touches[0] : e;
+    startY = t.clientY; startX = t.clientX;
+    deltaY = 0; dragging = true; locked = false; direction = null;
+    container.classList.add('dragging');
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    var t = e.touches ? e.touches[0] : e;
+    var dy = t.clientY - startY;
+    var dx = t.clientX - startX;
+    if (!locked) {
+      if (Math.abs(dy) > 8 || Math.abs(dx) > 8) {
+        direction = Math.abs(dy) >= Math.abs(dx) ? 'v' : 'h';
+        locked = true;
+      }
+    }
+    if (direction === 'v') {
+      if (e.cancelable) e.preventDefault();
+      deltaY = dy;
+      if ((current === 0 && dy > 0) || (current === total - 1 && dy < 0)) {
+        deltaY = dy * 0.3;
+      }
+      var pct = (-current * 100) + (deltaY / container.clientHeight) * 100;
+      container.style.transform = 'translateY(' + pct + '%)';
+    }
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    container.classList.remove('dragging');
+    if (direction === 'v' && Math.abs(deltaY) > threshold) {
+      goTo(current + (deltaY < 0 ? 1 : -1));
+    } else {
+      goTo(current);
+    }
+    deltaY = 0;
+  }
+
+  container.addEventListener('touchstart', onStart, { passive: true });
+  container.addEventListener('touchmove', onMove, { passive: false });
+  container.addEventListener('touchend', onEnd);
+  container.addEventListener('touchcancel', onEnd);
+
+  container.addEventListener('mousedown', function (e) { onStart(e); e.preventDefault(); });
+  window.addEventListener('mousemove', function (e) { if (dragging) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+
+  var wheelLock = false;
+  container.addEventListener('wheel', function (e) {
+    if (wheelLock) return;
+    if (Math.abs(e.deltaY) < 10) return;
+    wheelLock = true;
+    goTo(current + (e.deltaY > 0 ? 1 : -1));
+    setTimeout(function () { wheelLock = false; }, 650);
+  }, { passive: true });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') goTo(current + 1);
+    else if (e.key === 'ArrowUp' || e.key === 'PageUp') goTo(current - 1);
+  });
+
+  window.addEventListener('resize', function () { goTo(current); });
+})();
+</script>
+
+</body>
+</html>

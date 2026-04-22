@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>李治鹏 & 徐玥 · 婚礼邀请函</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Pinyon+Script&family=Dancing+Script:wght@400;500;600&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div id="root" style="height:100%;"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="hd-decorations.jsx"></script>
+<script type="text/babel" src="pages-1.jsx"></script>
+<script type="text/babel" src="pages-2.jsx"></script>
+
+<script type="text/babel">
+
+const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentRose": "#C44536",
+  "accentGreen": "#3E5A3A",
+  "accentGold": "#E8B84A",
+  "paper": "#F4EDD8",
+  "variant": "romantic"
+}/*EDITMODE-END*/;
+
+// Variant palettes
+const VARIANTS = {
+  handDrawn: { label: '手绘花卉（默认）', rose: '#C44536', green: '#3E5A3A', gold: '#E8B84A', paper: '#F4EDD8' },
+  romantic:  { label: '玫瑰浪漫', rose: '#B03A5E', green: '#5A6B4A', gold: '#D4A857', paper: '#FBF1E8' },
+  cinema:    { label: '电影暖调', rose: '#8E3028', green: '#2D3A2E', gold: '#F4D35E', paper: '#F5EFE4' },
+  fresh:     { label: '清新自然', rose: '#9E4A52', green: '#4C6B47', gold: '#C9A83F', paper: '#F7F1DF' },
+};
+
+function applyVariant(name) {
+  const v = VARIANTS[name] || VARIANTS.handDrawn;
+  const root = document.documentElement;
+  root.style.setProperty('--rose', v.rose);
+  root.style.setProperty('--green', v.green);
+  root.style.setProperty('--gold', v.gold);
+  root.style.setProperty('--paper', v.paper);
+  // Simple approach: swap body bg via inline var (paper-bg uses #F4EDD8, override it)
+  const css = `
+    .paper-bg { background-color: ${v.paper} !important; }
+    .scroll-hint { color: rgba(${hexToRgb(v.green)},0.7) !important; }
+  `;
+  let style = document.getElementById('variant-style');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'variant-style';
+    document.head.appendChild(style);
+  }
+  style.textContent = css;
+}
+function hexToRgb(h) {
+  const c = h.replace('#','');
+  return [parseInt(c.slice(0,2),16), parseInt(c.slice(2,4),16), parseInt(c.slice(4,6),16)].join(',');
+}
+
+function App() {
+  const names = { groom: '李治鹏', bride: '徐玥' };
+  const [photos, setPhotos] = React.useState({});
+  const [pageIdx, setPageIdx] = React.useState(0);
+  const [variant, setVariant] = React.useState(TWEAKS_DEFAULTS.variant || 'handDrawn');
+  const [tweaksVisible, setTweaksVisible] = React.useState(false);
+  const pagerRef = React.useRef(null);
+
+  React.useEffect(() => { applyVariant(variant); }, [variant]);
+
+  // Restore playback position
+  React.useEffect(() => {
+    const saved = Number(localStorage.getItem('wedding-page') || 0);
+    if (pagerRef.current && saved) {
+      pagerRef.current.scrollTo({ top: saved * pagerRef.current.clientHeight, behavior: 'auto' });
+      setPageIdx(saved);
+    }
+  }, []);
+
+  // Track scroll position
+  const onScroll = () => {
+    const el = pagerRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollTop / el.clientHeight);
+    if (idx !== pageIdx) {
+      setPageIdx(idx);
+      localStorage.setItem('wedding-page', idx);
+      window.postMessage({ slideIndexChanged: idx }, '*');
+    }
+  };
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const handle = (e) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handle);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handle);
+  }, []);
+
+  const setVariantPersist = (v) => {
+    setVariant(v);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { variant: v } }, '*');
+  };
+
+  const onUpload = (key, providedFile) => {
+    if (providedFile) {
+      const url = URL.createObjectURL(providedFile);
+      setPhotos(p => ({...p, [key]: url}));
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const f = e.target.files?.[0];
+      if (f) {
+        const url = URL.createObjectURL(f);
+        setPhotos(p => ({...p, [key]: url}));
+      }
+    };
+    input.click();
+  };
+
+  const pages = [
+    <CoverPage names={names} photos={photos} onUpload={onUpload}/>,
+    <StoryPage names={names} photos={photos} onUpload={onUpload}/>,
+    <WelcomePage photos={photos} onUpload={onUpload}/>,
+    <StoryContinuedPage photos={photos} onUpload={onUpload}/>,
+    <GalleryHero photos={photos} onUpload={onUpload}/>,
+    <ReflectionPage photos={photos} onUpload={onUpload}/>,
+    <ReminiscePage photos={photos} onUpload={onUpload}/>,
+    <InviteVideoPage photos={photos} onUpload={onUpload}/>,
+    <LocationPage photos={photos} onUpload={onUpload}/>,
+    <VenuePage photos={photos} onUpload={onUpload}/>,
+    <SchedulePage/>,
+    <MessagePage names={names}/>,
+    <WishPage photos={photos} onUpload={onUpload}/>,
+    <RSVPPage/>,
+  ];
+
+  return (
+    <>
+      <div className="pager" ref={pagerRef} onScroll={onScroll}>
+        {pages.map((p, i) => (
+          <div key={i} style={{height:'100%'}} data-screen-label={`${String(i+1).padStart(2,'0')} ${['Cover','Story','Welcome','Welcome 2','Welcome 3','Welcome 4','Welcome 5','Welcome 6','Date','Venue','Schedule','Invitation','Wishes','RSVP'][i]}`}>
+            {p}
+          </div>
+        ))}
+      </div>
+
+      {/* Dot indicator */}
+      <div className="dots">
+        {pages.map((_, i) => (
+          <div key={i} className={`dot ${i === pageIdx ? 'active' : ''} ${(i===0 || i===4) ? 'on-dark' : ''}`} style={{background: (i===0||i===4) ? 'rgba(255,255,255,0.5)' : undefined}}/>
+        ))}
+      </div>
+
+      {/* Tweaks panel */}
+      {tweaksVisible && (
+        <div className="tweaks-panel">
+          <h4>Tweaks</h4>
+          <div className="tweak-group">
+            <div style={{marginBottom: 6, opacity: 0.7}}>整体配色</div>
+            <div className="tweak-options" style={{flexDirection:'column'}}>
+              {Object.entries(VARIANTS).map(([k, v]) => (
+                <button key={k}
+                        className={`tweak-btn ${variant === k ? 'active' : ''}`}
+                        onClick={() => setVariantPersist(k)}>
+                  <span style={{display:'inline-flex', gap: 3, marginRight: 6, verticalAlign:'middle'}}>
+                    <span style={{width:8,height:8,borderRadius:'50%',background:v.rose,display:'inline-block'}}/>
+                    <span style={{width:8,height:8,borderRadius:'50%',background:v.green,display:'inline-block'}}/>
+                    <span style={{width:8,height:8,borderRadius:'50%',background:v.gold,display:'inline-block'}}/>
+                  </span>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="tweak-group" style={{marginBottom: 0}}>
+            <div style={{opacity: 0.7, fontSize: 10, lineHeight: 1.5}}>
+              点击任意照片占位可上传。<br/>
+              上下滑动浏览。
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+</script>
+</body>
+</html>
