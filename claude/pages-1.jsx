@@ -65,7 +65,7 @@ function CoverPage({ names, photos, onUpload }) {
   return (
     <div className="page cover" onClick={() => onUpload('cover-full')}>
       <img
-        src={custom || '../image%20final/page1.png?t=20260421'}
+        src={custom || '../image%20final/page1.jpg'}
         className="kenburns"
         style={{width:'100%', height:'100%', objectFit:'cover', objectPosition:'center center', display:'block', cursor:'pointer'}}
       />
@@ -708,7 +708,7 @@ function InviteVideoPage({ photos, onUpload }) {
           <div style={{aspectRatio:'4/3', overflow:'hidden', background:'#1a1815', position:'relative'}}>
             <video
               ref={videoRef}
-              src={photos['invite-video'] || '../video/invitation.mov'}
+              src={photos['invite-video'] || '../video/invitation.mp4'}
               autoPlay
               muted={muted}
               loop
